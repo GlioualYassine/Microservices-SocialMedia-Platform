@@ -13,17 +13,22 @@ import org.example.authservice.auth.requests.RegistraitonRequest;
 import org.example.authservice.auth.requests.ResetPasswordRequest;
 import org.example.authservice.auth.responses.AuthenticationResponse;
 import org.example.authservice.auth.responses.PasswordResetResponse;
+import org.example.authservice.auth.responses.UserResponse;
+import org.example.authservice.dto.ApiResponse;
 import org.example.authservice.email.EmailService;
 import org.example.authservice.email.EmailTemplateName;
 import org.example.authservice.kafka.consumer.UserDeleteDto;
 import org.example.authservice.kafka.consumer.UserUpdateDto;
 import org.example.authservice.kafka.producer.UserDTO;
+import org.example.authservice.kafka.producer.UserEvent;
 import org.example.authservice.kafka.producer.UserProducer;
 import org.example.authservice.models.User;
 import org.example.authservice.repository.RoleRepository;
 import org.example.authservice.repository.UserRepository;
 import org.example.authservice.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,6 +39,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -54,7 +60,7 @@ public class AuthenticationService {
     @Value("${application.mailing.frontend.reset-password-url}")
     private String resetPasswordUrl;
 
-    public void register(RegistraitonRequest request) throws MessagingException {
+    public ApiResponse register(RegistraitonRequest request) throws MessagingException {
         var userRole = roleRepository.findByName("USER")
                 // todo - better exception handling
                 .orElseThrow(()->new IllegalStateException("ROLE USER was  not initialized"));
@@ -78,7 +84,18 @@ public class AuthenticationService {
                 .username(u.fullName())
                 .build();
         userProducer.sendUser(userDTO);
+        // Envoyer un événement à Kafka pour informer ChatService de la création du nouvel utilisateur
+        UserEvent event = new UserEvent(u.getId(), u.getFirstName(),u.getLastName(),u.getEmail(), "created");
+        userProducer.NotifyUserAction(event);
         sendValidationEmail(user);
+
+        ApiResponse apiResponse = ApiResponse.builder()
+                .statusCode(200)
+                .status("Success")
+                .reason("User created successfully")
+                .data(user)
+                .build();
+        return apiResponse;
     }
 
     private void sendValidationEmail(User user) throws MessagingException {
@@ -118,7 +135,7 @@ public class AuthenticationService {
         return codeBuilder.toString();
     }
 
-    public AuthenticationResponse authenticate(@Valid AuthenticationRequest request) {
+    public ApiResponse authenticate(@Valid AuthenticationRequest request) {
         var auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -130,10 +147,31 @@ public class AuthenticationService {
         var user = ((User)auth.getPrincipal());
         claims.put("fullName",user.fullName());
         var jwtToken = jwtService.generateToken(claims,user);
-        return AuthenticationResponse
-                .builder()
-                .Token(jwtToken)
+        Token token = Token.builder()
+                .token(jwtToken)
+                .createdDate(LocalDateTime.now())
+                .expiresDate(LocalDateTime.now().plusMinutes(15))
+                .user(user)
                 .build();
+        tokenRepository.save(token);
+
+        // Envoyer un événement à Kafka pour informer ChatService de la connexion de l'utilisateur
+        UserEvent event = new UserEvent(((User)user).getId(), user.getFirstName(),user.getLastName(), user.getEmail(), "online");
+        userProducer.NotifyUserAction(event);
+
+        Map<String,Object> response = new HashMap<>();
+        response.put("token",jwtToken);
+        response.put("user",user);
+
+        return ApiResponse.builder()
+                .statusCode(200)
+                .status("Success")
+                .reason("User authenticated successfully")
+                //.data(AuthenticationResponse.builder().Token(jwtToken).build())
+                .data(response)
+                .build();
+
+
     }
 
     //@Transactional
@@ -228,5 +266,33 @@ public class AuthenticationService {
         tokenRepository.deleteAll(tokens);
 
     }
+
+    public ApiResponse logout(UUID userId, String token) {
+        // Fetch the user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Invalidate the token
+        Token savedToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Token not found"));
+
+        // Set the token as expired (or you can delete it if your logic supports token deletion)
+        savedToken.setExpiresDate(LocalDateTime.now());
+        savedToken.setValidatedDate(LocalDateTime.now());
+        tokenRepository.save(savedToken);
+
+        // Notify ChatService about the user logout event
+        UserEvent event = new UserEvent(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), "offline");
+        userProducer.NotifyUserAction(event);
+
+        // Prepare and return response
+        return ApiResponse.builder()
+                .statusCode(200)
+                .status("Success")
+                .reason("User logged out successfully")
+                .build();
+    }
+
+
 
 }

@@ -3,54 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/main.css">
-    <title>Chat Application</title>
+    <title>Chat App WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.4.0/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #chat-box, .private-chat { border: 1px solid #ccc; padding: 10px; width: 300px; height: 300px; overflow-y: scroll; }
+        #user-status, .private-chat-section { margin-bottom: 10px; }
+        #message-box, .private-message-box { margin-top: 10px; }
+        .private-chat { border-color: blue; }
+    </style>
 </head>
 <body>
 
-<h2>One to One Chat | Spring boot & Websocket | By Alibou</h2>
+<h1>WebSocket Chat Application</h1>
 
-<div class="user-form" id="username-page">
-    <h2>Enter Chatroom</h2>
-    <form id="usernameForm">
-        <label for="nickname">Nickname:</label>
-        <input type="text" id="nickname" name="nickname" required>
-
-        <label for="fullname">Real Name:</label>
-        <input type="text" id="fullname" name="realname" required>
-
-        <button type="submit">Enter Chatroom</button>
-    </form>
+<div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" placeholder="Enter your username" />
+    <button onclick="connect()">Connect</button>
 </div>
 
-<div class="chat-container hidden" id="chat-page">
-    <div class="users-list">
-        <div class="users-list-container">
-            <h2>Online Users</h2>
-            <ul id="connectedUsers">
-            </ul>
-        </div>
-        <div>
-            <p id="connected-user-fullname"></p>
-            <a class="logout" href="javascript:void(0)" id="logout">Logout</a>
-        </div>
-    </div>
-
-    <div class="chat-area">
-        <div class="chat-area" id="chat-messages">
-        </div>
-
-        <form id="messageForm" name="messageForm" class="hidden">
-            <div class="message-input">
-                <input autocomplete="off" type="text" id="message" placeholder="Type your message...">
-                <button>Send</button>
-            </div>
-        </form>
-    </div>
+<div id="user-status">
+    <h3>Online Users:</h3>
+    <ul id="online-users"></ul>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.1.4/sockjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
-<script src="/js/main.js"></script>
+<div id="chat-box">
+    <h3>Chat Messages:</h3>
+    <div id="messages"></div>
+</div>
+
+<div id="message-box">
+    <input type="text" id="message" placeholder="Enter message" />
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+<div id="private-chats"></div>
+
+<script>
+    var stompClient = null;
+    var username = null;
+    var privateChats = {};
+
+    function connect() {
+        username = document.getElementById("username").value;
+        if (!username) {
+            alert("Please enter a username");
+            return;
+        }
+
+        var socket = new SockJS('/ws-endpoint');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+
+            stompClient.subscribe('/topic/public', function (messageOutput) {
+                var message = JSON.parse(messageOutput.body);
+                if (message.type === 'CHAT_MESSAGE') {
+                    showMessage(message);
+                } else if (message.type === 'USER_CREATED' || message.type === 'USER_ONLINE' || message.type === 'USER_OFFLINE') {
+                    updateOnlineUsers(message.users);
+                }
+            });
+
+            stompClient.send("/app/userConnected", {}, JSON.stringify({ username: username }));
+
+            stompClient.subscribe('/user/queue/private', function (messageOutput) {
+                var message = JSON.parse(messageOutput.body);
+                if (message.type === 'CHAT_MESSAGE') {
+                    showPrivateMessage(message);
+                }
+            });
+        });
+    }
+
+    function sendMessage() {
+        var messageContent = document.getElementById("message").value;
+        if (messageContent && stompClient) {
+            var chatMessage = {
+                senderId: username,
+                content: messageContent,
+                type: 'CHAT_MESSAGE'
+            };
+            stompClient.send("/app/sendMessage", {}, JSON.stringify(chatMessage));
+            document.getElementById("message").value = '';
+        }
+    }
+
+    function showMessage(message) {
+        var messageElement = document.createElement('div');
+        messageElement.textContent = message.senderId + ": " + message.content;
+        document.getElementById("messages").appendChild(messageElement);
+    }
+
+    function updateOnlineUsers(users) {
+        var usersList = document.getElementById("online-users");
+        usersList.innerHTML = '';
+        users.forEach(function(user) {
+            var userElement = document.createElement('li');
+            userElement.textContent = user + ' (Online)';
+            userElement.onclick = function() {
+                startPrivateChat(user);
+            };
+            usersList.appendChild(userElement);
+        });
+    }
+
+    function startPrivateChat(user) {
+        if (!privateChats[user]) {
+            var chatDiv = document.createElement('div');
+            chatDiv.className = 'private-chat';
+            chatDiv.id = 'private-chat-' + user;
+            chatDiv.innerHTML = `
+                <h3>Private Chat with ${user}</h3>
+                <div class="private-chat-section" id="private-messages-${user}"></div>
+                <input type="text" class="private-message-box" id="private-message-${user}" placeholder="Enter private message" />
+                <button onclick="sendPrivateMessage('${user}')">Send</button>
+            `;
+            document.getElementById('private-chats').appendChild(chatDiv);
+            privateChats[user] = chatDiv;
+        }
+    }
+
+    function sendPrivateMessage(recipient) {
+        var messageContent = document.getElementById(`private-message-${recipient}`).value;
+        if (messageContent && stompClient) {
+            var chatMessage = {
+                senderId: username,
+                recipientId: recipient,
+                content: messageContent,
+                type: 'CHAT_MESSAGE'
+            };
+            stompClient.send("/app/sendPrivateMessage", {}, JSON.stringify(chatMessage));
+            document.getElementById(`private-message-${recipient}`).value = '';
+        }
+    }
+
+    function showPrivateMessage(message) {
+        var chatDiv = privateChats[message.senderId] || privateChats[message.recipientId];
+        if (chatDiv) {
+            var privateMessages = document.getElementById(`private-messages-${message.senderId}`) || document.getElementById(`private-messages-${message.recipientId}`);
+            var messageElement = document.createElement('div');
+            messageElement.textContent = message.senderId + ": " + message.content;
+            privateMessages.appendChild(messageElement);
+        }
+    }
+</script>
+
 </body>
 </html>

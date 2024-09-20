@@ -28,7 +28,7 @@ spring:
       properties:
         #since we want to serialize a json object, the producer needs to inform the consumer of our topic
         #what is the object that we are sending so here we are sending an object of type orderConfirmation
-        spring.json.type.mapping: userDTO:org.example.authservice.kafka.producer.UserDTO
+        spring.json.type.mapping: userDTO:org.example.authservice.kafka.producer.UserDTO , event:org.example.authservice.kafka.producer.UserEvent
     consumer:
       bootstrap-servers: localhost:9092
       group-id: authGroup
@@ -72,3 +72,4 @@ springdoc:
 server:
   servlet:
     context-path: /api/v1
+  port: 8089

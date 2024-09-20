@@ -26,4 +26,15 @@ public class UserProducer {
                         .build();
         kafkaTemplate.send(message);
     }
+    public void NotifyUserAction(UserEvent event){
+        log.info("Sending user event ");
+
+        Message<UserEvent> message = MessageBuilder
+                .withPayload(event)
+                .setHeader(
+                        KafkaHeaders.TOPIC,
+                        "user-events" )
+                .build();
+        kafkaTemplate.send(message);
+    }
 }

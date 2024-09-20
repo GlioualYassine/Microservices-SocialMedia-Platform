@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("auth")
 @RequiredArgsConstructor
@@ -29,12 +31,12 @@ public class AuthenticationController {
     public ResponseEntity<?> register(
             @RequestBody @Valid RegistraitonRequest request
     ) throws MessagingException {
-        authenticationService.register(request);
-        return ResponseEntity.accepted().build();
+        return ResponseEntity.accepted().body(authenticationService.register(request));
+       // return ResponseEntity.accepted().build();
     }
 
     @PostMapping("authenticate")
-    public ResponseEntity<AuthenticationResponse> authenticate(
+    public ResponseEntity<?> authenticate(
             @RequestBody @Valid AuthenticationRequest request
     ) {
         return ResponseEntity.ok(authenticationService.authenticate(request));
@@ -60,5 +62,15 @@ public class AuthenticationController {
             ) throws MessagingException {
         return ResponseEntity.ok(authenticationService.resetPassword(request, token));
     }
+
+    @GetMapping("/logout/{userId}/{token}")
+    public ResponseEntity<?> logout(
+            @PathVariable UUID userId,
+            @PathVariable String token
+    ) {
+        authenticationService.logout(userId, token);
+        return ResponseEntity.ok().build();
+    }
+
 
 }
