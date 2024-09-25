@@ -44,7 +44,8 @@ export class ChatComponent implements OnInit, OnDestroy {
   onlineUserNotification: string | null = null;
 
   // Assuming you have a WebSocket or similar service for user status updates
-  onUserOnline(user: any) {
+ /* 
+ onUserOnline(user: any) {
     this.onlineUserNotification = `${user.firstName} ${user.lastName} is online!`;
   
     // Clear the notification after 5 seconds
@@ -52,7 +53,7 @@ export class ChatComponent implements OnInit, OnDestroy {
       this.onlineUserNotification = null;
     }, 5000);
   }
-
+*/
   constructor(
     private router: Router,
     private userService: UserService,
