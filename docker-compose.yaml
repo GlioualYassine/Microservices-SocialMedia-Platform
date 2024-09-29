@@ -1,63 +1,28 @@
-# Docker Compose configuration for various services
-
 services:
   postgres:
     image: postgres
-    # Name of the container
     container_name: ms_pg_sql_container
     environment:
-      # Username for the PostgreSQL database
       POSTGRES_USER: postgres
-      # Password for the PostgreSQL database
       POSTGRES_PASSWORD: postgres
-      # Directory for PostgreSQL data
       PGDATA: /var/lib/postgresql/data
     volumes:
-      # Mount a volume for PostgreSQL data
       - postgres:/var/lib/postgresql/data
     ports:
-      # Map port 5432 on the host to port 5432 in the container
       - 5432:5432
     networks:
-      # Connect to the microservices network
       - microservices-net
-    # Restart policy for the container
     restart: unless-stopped
-
-  #  pgadmin:
-  #    container_name: ms_pg_admin_container
-  #    image: dpage/pgadmin4
-  #    environment:
-  #      # Default email for pgAdmin
-  #      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin@pgadmin.org}
-  #      # Default password for pgAdmin
-  #      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
-  #      # Run pgAdmin in desktop mode
-  #      PGADMIN_CONFIG_SERVER_MODE: 'False'
-  #    volumes:
-  #      # Mount a volume for pgAdmin data
-  #      - pgadmin:/var/lib/pgadmin
-  #    ports:
-  #      # Map port 5050 on the host to port 80 in the container
-  #      - "5050:80"
-  #    networks:
-  #      # Connect to the microservices network
-  #      - microservices-net
-  #    restart: unless-stopped
 
   mongodb:
     container_name: mongo_db
     image: mongo
     ports:
-      # Map port 27017 on the host to port 27017 in the container
       - 27017:27017
     volumes:
-      # Mount a volume for MongoDB data
       - mongo:/data
     environment:
-      # Root username for MongoDB
       - MONGO_INITDB_ROOT_USERNAME=root
-      # Root password for MongoDB
       - MONGO_INITDB_ROOT_PASSWORD=root
 
   mongo-express:
@@ -65,14 +30,10 @@ services:
     image: mongo-express
     restart: always
     ports:
-      # Map port 8081 on the host to port 8081 in the container
       - 8081:8081
     environment:
-      # Admin username for MongoDB
       - ME_CONFIG_MONGODB_ADMINUSERNAME=root
-      # Admin password for MongoDB
       - ME_CONFIG_MONGODB_ADMINPASSWORD=root
-      # MongoDB server address
       - ME_CONFIG_MONGODB_SERVER=mongodb
 
   zookeeper:
@@ -81,7 +42,7 @@ services:
     environment:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000 # 2s
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 2181:2181
     networks:
@@ -108,14 +69,21 @@ services:
     container_name: ms_mail_dev
     image: maildev/maildev
     ports:
-      # Map port 1080 on the host to port 1080 in the container
       - 1080:1080
-      # Map port 1025 on the host to port 1025 in the container
       - 1025:1025
 
-
-
-
+  neo4j:
+    image: neo4j:latest
+    container_name: ms_neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/test
+    ports:
+      - 7474:7474  # Interface web de Neo4j
+      - 7687:7687  # Bolt (Protocole utilisé par les drivers pour interagir avec Neo4j)
+    volumes:
+      - neo4j:/data
+    networks:
+      - microservices-net
 
 networks:
   microservices-net:
@@ -125,3 +93,4 @@ volumes:
   postgres:
   pgadmin:
   mongo:
+  neo4j:

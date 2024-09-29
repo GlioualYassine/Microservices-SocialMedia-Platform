@@ -1,33 +1,5 @@
 spring:
+  config:
+    import: optional:configserver:http://localhost:9090
   application:
     name: chat-service
-  datasource:
-      # URL of the PostgreSQL database
-      url: jdbc:postgresql://localhost:5432/chat
-      # Username for the database connection
-      username: postgres
-      # Password for the database connection
-      password: postgres
-      # Driver class name for PostgreSQL
-      driver-class-name: org.postgresql.Driver
-  jpa:
-      hibernate:
-        ddl-auto: create
-      # Type of database
-      database: postgresql
-      # Hibernate dialect for PostgreSQL
-      database-platform: org.hibernate.dialect.PostgreSQLDialect
-  kafka:
-    consumer:
-      bootstrap-servers: localhost:9092
-      group-id: chatGroup
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: '*'
-        #since we want to serialize a json object, the producer needs to inform the consumer of our topic
-        #what is the object that we are sending so here we are sending an object of type orderConfirmation
-        spring.json.type.mapping: userDTO:chatapp.kafka.consumer.UserEvent,event:chatapp.kafka.consumer.UserEvent
-server:
-  port: 8090

@@ -1,0 +1,29 @@
+spring:
+
+  mail:
+    host: localhost
+    port: 1025
+    username: admin
+    password: admin
+    properties:
+      mail:
+        smtp:
+          trust: "*"
+        auth: true
+        starttls:
+          enable: true
+        connectiontimeout: 5000
+        timeout: 3000
+        writetimeout: 5000
+  kafka:
+    consumer:
+      bootstrap-servers: localhost:9092
+      group-id: notificationGroup
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        #since we want to serialize a json object, the producer needs to inform the consumer of our topic
+        #what is the object that we are sending so here we are sending an object of type orderConfirmation
+        spring.json.type.mapping: message:org.example.notificationservice.kafka.consumer.AuthenticationMessage

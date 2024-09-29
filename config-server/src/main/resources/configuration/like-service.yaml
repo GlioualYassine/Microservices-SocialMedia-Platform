@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    # URL of the PostgreSQL database
+    url: jdbc:postgresql://localhost:5432/likeservicedb
+    # Username for the database connection
+    username: postgres
+    # Password for the database connection
+    password: postgres
+    # Driver class name for PostgreSQL
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    # Type of database
+    database: postgresql
+    # Hibernate dialect for PostgreSQL
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        #since we want to serialize a json object, the producer needs to inform the consumer of our topic
+        #what is the object that we are sending so here we are sending an object of type orderConfirmation
+        spring.json.type.mapping: likeEvent:org.example.likeservice.producer.LikeEvent
+server:
+  servlet:
+    context-path: /api/v1
+  port: 8086

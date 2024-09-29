@@ -19,9 +19,7 @@ import org.example.authservice.email.EmailService;
 import org.example.authservice.email.EmailTemplateName;
 import org.example.authservice.kafka.consumer.UserDeleteDto;
 import org.example.authservice.kafka.consumer.UserUpdateDto;
-import org.example.authservice.kafka.producer.UserDTO;
-import org.example.authservice.kafka.producer.UserEvent;
-import org.example.authservice.kafka.producer.UserProducer;
+import org.example.authservice.kafka.producer.*;
 import org.example.authservice.models.User;
 import org.example.authservice.repository.RoleRepository;
 import org.example.authservice.repository.UserRepository;
@@ -54,6 +52,7 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserProducer userProducer;
+    private final AuthenticationProducer authenticationProducer;
 
     @Value("${application.mailing.frontend.activation-url}")
     private String activationUrl ;
@@ -100,15 +99,27 @@ public class AuthenticationService {
 
     private void sendValidationEmail(User user) throws MessagingException {
         var newtoken = generateAndSaveActivationToken(user);
-        /// TODO - send email
-        emailService.sendEmail(
-                user.getEmail(),
-                user.fullName(),
-                EmailTemplateName.ACTIVATE_ACCOUNT,
-                activationUrl,
-                newtoken,
-                "Activate Account"
-        );
+        /// TODO - send email to notification Service
+
+        AuthenticationMessage message = AuthenticationMessage
+                .builder()
+                .fullname(user.fullName())
+                .email(user.getEmail())
+                .templateName(EmailTemplateName.ACTIVATE_ACCOUNT)
+                .confirmationUrl(activationUrl)
+                .token(newtoken)
+                .subject("Activate Account")
+                .build();
+
+        authenticationProducer.sendNotification(message);
+//        emailService.sendEmail(
+//                user.getEmail(),
+//                user.fullName(),
+//                EmailTemplateName.ACTIVATE_ACCOUNT,
+//                activationUrl,
+//                newtoken,
+//                "Activate Account"
+//        );
 
     }
 
@@ -198,14 +209,23 @@ public class AuthenticationService {
         var token = generateAndSaveActivationToken(user);
 
         var link = resetPasswordUrl + "?token=" + token;
-
-        emailService.sendResetPasswordEmail(
-                user.getEmail(),
-                user.fullName(),
-                EmailTemplateName.RESET_PASSWORD,
-                link,
-                "Reset Password"
-        );
+        AuthenticationMessage message = AuthenticationMessage
+                .builder()
+                .fullname(user.fullName())
+                .email(user.getEmail())
+                .templateName(EmailTemplateName.RESET_PASSWORD)
+                .confirmationUrl(link)
+                .token(token)
+                .subject("Reset Password")
+                .build();
+        authenticationProducer.sendNotification(message);
+//        emailService.sendResetPasswordEmail(
+//                user.getEmail(),
+//                user.fullName(),
+//                EmailTemplateName.RESET_PASSWORD,
+//                link,
+//                "Reset Password"
+//        );
     }
 
 
