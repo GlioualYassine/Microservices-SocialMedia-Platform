@@ -100,13 +100,13 @@ public class AuthenticationService {
     private void sendValidationEmail(User user) throws MessagingException {
         var newtoken = generateAndSaveActivationToken(user);
         /// TODO - send email to notification Service
-
+        String url = activationUrl + "?token=" + newtoken;
         AuthenticationMessage message = AuthenticationMessage
                 .builder()
                 .fullname(user.fullName())
                 .email(user.getEmail())
                 .templateName(EmailTemplateName.ACTIVATE_ACCOUNT)
-                .confirmationUrl(activationUrl)
+                .confirmationUrl(url)
                 .token(newtoken)
                 .subject("Activate Account")
                 .build();

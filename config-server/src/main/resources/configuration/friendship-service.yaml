@@ -1,0 +1,14 @@
+spring:
+  neo4j:
+    uri: bolt://localhost:7687  # Change this if your Neo4j instance is hosted elsewhere
+    username: neo4j
+    password: password123
+    driver:
+      encrypted: false
+  datasource:
+    url: none
+#  jpa:
+#    hibernate:
+#      ddl-auto: create
+server:
+  port: 8079

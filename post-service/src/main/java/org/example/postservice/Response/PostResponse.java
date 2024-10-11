@@ -22,7 +22,7 @@ public class PostResponse {
 
     private String content;
     private User user;
-
+    private String image;
 
     private LocalDateTime createdAt;
 

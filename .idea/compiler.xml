@@ -9,6 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="authserviec" />
         <module name="config-server" />
+        <module name="friendship-service" />
         <module name="post-service" />
         <module name="comment-service" />
         <module name="like-service" />
@@ -35,6 +36,7 @@
       <module name="config-server" options="-parameters" />
       <module name="config-service" options="-parameters" />
       <module name="discovery-service" options="-parameters" />
+      <module name="friendship-service" options="-parameters" />
       <module name="gateway-service" options="-parameters" />
       <module name="like-service" options="-parameters" />
       <module name="notification-service" options="-parameters" />

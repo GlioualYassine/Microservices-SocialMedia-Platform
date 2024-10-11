@@ -39,3 +39,7 @@ server:
   servlet:
     context-path: /api/v1
   port: 8083
+application:
+  file:
+    uploads:
+      photos-output-path: ./uploads
