@@ -19,12 +19,12 @@ public class CommentController {
 
     // Ajouter un commentaire à un post
     @PostMapping
-    public ResponseEntity<Comment> addComment(
+    public ResponseEntity<CommentResponse> addComment(
             @RequestParam String content,
             @RequestParam UUID postId,
             @RequestParam UUID userId
     ) {
-        Comment newComment = commentService.addComment(content, postId, userId);
+        CommentResponse newComment = commentService.addComment(content, postId, userId);
         return ResponseEntity.ok(newComment);
     }
 

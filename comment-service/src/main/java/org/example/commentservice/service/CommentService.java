@@ -3,6 +3,7 @@ package org.example.commentservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.commentservice.FeignClients.CommentResponse;
+import org.example.commentservice.FeignClients.User;
 import org.example.commentservice.FeignClients.UserServiceClient;
 import org.example.commentservice.kafka.producer.CommentEvent;
 import org.example.commentservice.kafka.producer.CommentProducer;
@@ -25,7 +26,7 @@ public class CommentService {
     private final UserServiceClient userServiceClient;
 
     // Méthode pour ajouter un commentaire (via Kafka)
-    public Comment addComment(String commentContent, UUID postId, UUID userId) {
+    public CommentResponse addComment(String commentContent, UUID postId, UUID userId) {
         Comment comment = Comment
                 .builder()
                 .id(UUID.randomUUID())
@@ -44,7 +45,17 @@ public class CommentService {
                 .createdAt(comment.getCreatedAt())
                 .build();
         commentProducer.sendCommentEventToPostSeviceToUpdateCommentsList(commentEvent);
-        return commentRepository.save(comment);
+        User user = userServiceClient.getUserById(userId);
+        CommentResponse commentResponse = CommentResponse.builder()
+                .id(comment.getId())
+                .content(comment.getContent())
+                .userId(user)
+                .createdAt(comment.getCreatedAt())
+                .build();
+
+
+        commentRepository.save(comment);
+        return commentResponse;
     }
 
     // Récupérer tous les commentaires associés à un post
