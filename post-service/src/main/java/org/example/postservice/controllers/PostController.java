@@ -26,8 +26,8 @@ public class PostController {
     }
 
     @PostMapping(value = "", consumes = "multipart/form-data")
-    public ResponseEntity<Post> createPost(@RequestParam String content, @RequestParam UUID userId , @RequestParam("file") MultipartFile file) {
-        Post post = postService.createPost(content, userId,file);
+    public ResponseEntity<PostResponse> createPost(@RequestParam String content, @RequestParam UUID userId , @RequestParam("file") MultipartFile file) {
+        PostResponse post = postService.createPost(content, userId,file);
         return new ResponseEntity<>(post, HttpStatus.CREATED);
     }
 

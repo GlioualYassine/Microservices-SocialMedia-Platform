@@ -33,7 +33,7 @@ public class PostService {
     private final SimpMessagingTemplate messagingTemplate;
 
 
-    public Post createPost(String content, UUID userId, MultipartFile file) {
+    public PostResponse createPost(String content, UUID userId, MultipartFile file) {
         User user = userServiceClient.getUserById(userId);
         Post post = Post.builder()
                 .content(content)
@@ -52,14 +52,18 @@ public class PostService {
                 .id(post.getId())
                 .content(post.getContent())
                 .user(user)
+                .comments(commentServiceClient.getCommentsByPostId(post.getId()))
+                .likes(likeServiceClient.getLikesByPostId(post.getId()))
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();
+        if (post.getImageUrl() != null)
+            postResponse.setImage(FileUtils.readFileFromLocation(post.getImageUrl()));
 
         // Envoyer le message au front-end
-        messagingTemplate.convertAndSend("/topic/posts", postResponse);
+        //messagingTemplate.convertAndSend("/topic/posts", postResponse);
 
-        return post;
+        return postResponse;
     }
 
     public List<PostResponse> getPostsByUser(UUID userId){
