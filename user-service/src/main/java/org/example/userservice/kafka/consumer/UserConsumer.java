@@ -23,4 +23,13 @@ public class UserConsumer {
                 .build();
         userRepository.save(user);
     }
+
+    @KafkaListener(topics = "user-friend-topic")
+    public void consumeUserFriendship(UserFriendDTO userFriendDTO){
+        userRepository.findById(userFriendDTO.userId())
+                .ifPresent(user -> {
+                    user.getFriends().add(userFriendDTO.friendId());
+                    userRepository.save(user);
+                });
+    }
 }

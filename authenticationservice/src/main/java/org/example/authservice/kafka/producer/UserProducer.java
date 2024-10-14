@@ -26,6 +26,19 @@ public class UserProducer {
                         .build();
         kafkaTemplate.send(message);
     }
+
+    public void sendUserNode(UserDTO userDTO){
+        log.info("Sending user ");
+
+        Message<UserDTO> message = MessageBuilder
+                .withPayload(userDTO)
+                .setHeader(
+                        KafkaHeaders.TOPIC,
+                        "user-nodes-topic" )
+                .build();
+        kafkaTemplate.send(message);
+    }
+
     public void NotifyUserAction(UserEvent event){
         log.info("Sending user event ");
 

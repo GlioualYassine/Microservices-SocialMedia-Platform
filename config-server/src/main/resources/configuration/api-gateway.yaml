@@ -58,6 +58,11 @@ spring:
           uri: lb:http://LIKE-SERVICE
           predicates:
             - Path=/api/v1/likes/**
+
+        - id: friendship-service
+          uri: lb:http://FRIENDSHIP-SERVICE
+          predicates:
+            - Path=/api/v1/friendships/**
 server:
   port: 8589
 application:

@@ -11,6 +11,5 @@ public record UserDTO(
         String lastName,
         String email,
         Boolean isOnline
-
 ) {
 }

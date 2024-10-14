@@ -1,6 +1,11 @@
 package org.example.friendshipservice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.example.friendshipservice.dtos.UserDTO;
+import org.example.friendshipservice.kafka.producer.UserFriendDTO;
+import org.example.friendshipservice.kafka.producer.UserFriendProducer;
+import org.example.friendshipservice.mapper.UserMapper;
 import org.example.friendshipservice.model.Friendship;
 import org.example.friendshipservice.model.User;
 import org.example.friendshipservice.repository.UserRepository;
@@ -14,10 +19,11 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FriendshipService {
 
     private final UserRepository userRepository;
-
+    private final UserFriendProducer userFriendProducer;
     // Send a friend request
     @Transactional
     public void sendFriendRequest(UUID fromUserId, UUID toUserId) {
@@ -29,48 +35,83 @@ public class FriendshipService {
         // Throws an exception if the user is not found.
         User toUser = userRepository.findById(toUserId).orElseThrow();
 
-        // Add the friend request relationship to the sender's list of friend requests.
-        fromUser.getFriendRequests().add(toUser);
+        if(fromUser.getFriendRequestsSent().contains(toUser)){
+            return;
+        }
+        // Add the receiving user to the sender's list of friend requests.
+        fromUser.getFriendRequestsSent().add(toUser);
+
+        // Add the sender user to the receiving user's list of friend requests.
+        toUser.getFriendRequestsReceived().add(fromUser);
 
         // Save the updated sender user entity to the repository.
         userRepository.save(fromUser);
+
+
     }
 
-    // Accept a friend request
-    @Transactional
-    public void acceptFriendRequest(UUID fromUserId, UUID toUserId) {
-        // Retrieve the user who is sending the friend request by their ID.
-        // Throws an exception if the user is not found.
-        User fromUser = userRepository.findById(fromUserId).orElseThrow();
 
-        // Retrieve the user who is receiving the friend request by their ID.
-        // Throws an exception if the user is not found.
-        User toUser = userRepository.findById(toUserId).orElseThrow();
+        @Transactional
+        public void acceptFriendRequest(UUID fromUserId, UUID toUserId) {
+            log.info("Starting acceptFriendRequest between fromUserId={} and toUserId={}", fromUserId, toUserId);
 
-        // Create a new friendship relationship
-        Friendship friendship = Friendship.builder()
-                .friend(toUser)
-                .since(LocalDateTime.now())
-                .status("ACTIVE")
-                .build();
+            // Retrieve sender (fromUser)
+            User fromUser = userRepository.findById(fromUserId).orElseThrow(() -> {
+                log.error("User with id={} not found", fromUserId);
+                return new IllegalArgumentException("User not found: " + fromUserId);
+            });
+            log.info("Retrieved fromUser: {}", fromUser);
 
-        // Add friendship to both users
-        fromUser.getFriendships().add(friendship);
-        toUser.getFriendships().add(Friendship.builder()
-                .friend(fromUser)
-                .since(LocalDateTime.now())
-                .status("ACTIVE")
-                .build());
+            // Retrieve receiver (toUser)
+            User toUser = userRepository.findById(toUserId).orElseThrow(() -> {
+                log.error("User with id={} not found", toUserId);
+                return new IllegalArgumentException("User not found: " + toUserId);
+            });
+            log.info("Retrieved toUser: {}", toUser);
 
-        // Remove the friend request from the sender's list of friend requests
-        fromUser.getFriendRequests().remove(toUser);
+            // Create friendship from fromUser to toUser
+            Friendship friendship = Friendship.builder()
+                    .friend(toUser)
+                    .since(LocalDateTime.now())
+                    .status("ACTIVE")
+                    .build();
+            log.debug("Created friendship from {} to {}", fromUser.getUsername(), toUser.getUsername());
 
-        // Save the updated sender user entity to the repository
-        userRepository.save(fromUser);
+            fromUser.getFriendships().add(friendship);
+            log.debug("Added friendship to fromUser's list. Current friendships: {}", fromUser.getFriendships());
 
-        // Save the updated receiver user entity to the repository
-        userRepository.save(toUser);
-    }
+            // Create the reciprocal friendship (from toUser to fromUser)
+            Friendship reciprocalFriendship = Friendship.builder()
+                    .friend(fromUser)
+                    .since(friendship.getSince())
+                    .status("ACTIVE")
+                    .build();
+            toUser.getFriendships().add(reciprocalFriendship);
+            log.debug("Added reciprocal friendship to toUser's list. Current friendships: {}", toUser.getFriendships());
+
+            // Remove friend requests from both users
+            boolean removedFromSent = fromUser.getFriendRequestsSent().remove(toUser);
+            boolean removedFromReceived = toUser.getFriendRequestsReceived().remove(fromUser);
+            log.debug("Removed toUser from fromUser's sent requests: {}", removedFromSent);
+            log.debug("Removed fromUser from toUser's received requests: {}", removedFromReceived);
+
+            // Save both users with updated friendships and requests
+            log.info("Saving updated fromUser and toUser...");
+            userRepository.save(fromUser);
+            userRepository.save(toUser);
+            log.info("Successfully saved both users.");
+
+            // Send event to notify friendship creation
+            UserFriendDTO userFriendEvent = UserFriendDTO.builder()
+                    .userId(fromUserId)
+                    .friendId(toUserId)
+                    .build();
+            userFriendProducer.sendUserFriendEvent(userFriendEvent);
+            log.info("Friendship event sent: {}", userFriendEvent);
+
+            log.info("Finished processing acceptFriendRequest.");
+        }
+
 
     // Get all friends of a user
     public Set<User> getFriends(UUID userId) {
@@ -89,7 +130,48 @@ public class FriendshipService {
     public Set<User> getFriendRequests(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow()
-                .getFriendRequests();
+                .getFriendRequestsReceived();
+    }
+
+    // Get all friend requests sent by a user
+    public Set<User> getFriendRequestsSent(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow()
+                .getFriendRequestsSent();
+    }
+
+    public Boolean checkExistingFriendRequest(UUID fromUserId, UUID toUserId) {
+        User fromUser = userRepository.findById(fromUserId).orElseThrow();
+
+        User toUser = userRepository.findById(toUserId).orElseThrow();
+        // Check if the receiving user is in the sender's list of friend requests
+        return fromUser.getFriendRequestsSent().contains(toUser);
+    }
+
+    public void cancelFriendRequest(UUID fromUserId, UUID toUserId) {
+        User fromUser = userRepository.findById(fromUserId).orElseThrow();
+        User toUser = userRepository.findById(toUserId).orElseThrow();
+
+        // Remove the receiving user from the sender's list of friend requests
+        fromUser.getFriendRequestsSent().remove(toUser);
+        // Remove the sender user from the receiving user's list of friend requests
+        toUser.getFriendRequestsReceived().remove(fromUser);
+        // Save the updated sender user entity to the repository
+        userRepository.save(fromUser);
+    }
+
+    public Set<User> getFriendRequestsReceived(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow()
+                .getFriendRequestsReceived();
+    }
+
+    public UserDTO getUserById(UUID id) {
+        User user = userRepository.findById(id).orElse(null);
+        if(user == null){
+            return null;
+        }
+        return UserMapper.toDTO(user);
     }
 }
 

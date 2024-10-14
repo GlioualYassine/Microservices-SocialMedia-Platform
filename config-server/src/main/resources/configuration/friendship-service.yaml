@@ -1,14 +1,36 @@
 spring:
   neo4j:
-    uri: bolt://localhost:7687  # Change this if your Neo4j instance is hosted elsewhere
-    username: neo4j
-    password: password123
-    driver:
-      encrypted: false
+    uri: bolt://localhost:7687  # Neo4j Bolt protocol
+    authentication:
+      username: neo4j
+      password: password123
   datasource:
     url: none
+  kafka:
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        #since we want to serialize a json object, the producer needs to inform the consumer of our topic
+        #what is the object that we are sending so here we are sending an object of type orderConfirmation
+        spring.json.type.mapping: userFriendDTO:org.example.friendshipservice.kafka.producer.UserFriendDTO
+    consumer:
+      bootstrap-servers: localhost:9092
+      group-id: nodesGroup
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        #since we want to serialize a json object, the producer needs to inform the consumer of our topic
+        #what is the object that we are sending so here we are sending an object of type orderConfirmation
+        spring.json.type.mapping: userDTO:org.example.friendshipservice.kafka.consumer.UserDTOConsumer
+
 #  jpa:
 #    hibernate:
 #      ddl-auto: create
 server:
+  servlet:
+    context-path: /api/v1
   port: 8079

@@ -26,7 +26,7 @@ spring:
         spring.json.trusted.packages: '*'
         #since we want to serialize a json object, the producer needs to inform the consumer of our topic
         #what is the object that we are sending so here we are sending an object of type orderConfirmation
-        spring.json.type.mapping: userDTO:org.example.userservice.kafka.consumer.UserDTOConsumer
+        spring.json.type.mapping: userDTO:org.example.userservice.kafka.consumer.UserDTOConsumer,userFriendDTO:org.example.userservice.kafka.consumer.UserFriendDTO
         #, paymentConfirmation:com.example.notification.kafka.payment.PaymentConfirmation
     producer:
       bootstrap-servers: localhost:9092

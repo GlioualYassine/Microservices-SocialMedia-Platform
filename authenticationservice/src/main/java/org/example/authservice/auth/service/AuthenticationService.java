@@ -83,6 +83,7 @@ public class AuthenticationService {
                 .username(u.fullName())
                 .build();
         userProducer.sendUser(userDTO);
+        userProducer.sendUserNode(userDTO);
         // Envoyer un événement à Kafka pour informer ChatService de la création du nouvel utilisateur
         UserEvent event = new UserEvent(u.getId(), u.getFirstName(),u.getLastName(),u.getEmail(), "created");
         userProducer.NotifyUserAction(event);

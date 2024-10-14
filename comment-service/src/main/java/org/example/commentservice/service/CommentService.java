@@ -104,6 +104,7 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId).orElse(null);
         if (comment != null) {
             comment.setContent(content);
+            comment.setCreatedAt(LocalDateTime.now());
             return commentRepository.save(comment);
         }
         return comment ;

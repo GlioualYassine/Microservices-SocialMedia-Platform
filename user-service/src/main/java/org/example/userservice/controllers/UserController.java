@@ -2,6 +2,7 @@ package org.example.userservice.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.example.userservice.models.User;
+import org.example.userservice.services.UserFriendsResponseList;
 import org.example.userservice.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +16,9 @@ import java.util.UUID;
 public class UserController {
     private final UserService userService;
 
-    @GetMapping
-    public ResponseEntity<List<User>>getAllUsers(){
-        return ResponseEntity.ok().body(userService.getAllUsers());
+    @GetMapping("/all/{id}")
+    public ResponseEntity<List<User>>getAllUsersExceptUser(@PathVariable UUID id){
+        return ResponseEntity.ok().body(userService.getAllUsersExceptUserAndFriend(id));
     }
 
     @GetMapping("/{id}")
@@ -25,6 +26,12 @@ public class UserController {
         return ResponseEntity.ok().body(userService.getUserById(id));
     }
 
+
+
+    @GetMapping("/friends/{id}")
+    public ResponseEntity<UserFriendsResponseList>getUserFriends(@PathVariable UUID id){
+        return ResponseEntity.ok().body(userService.getConnectedUserFriendships(id));
+    }
     @GetMapping("/email/{email}")
     public ResponseEntity<User>getUserByEmail(@PathVariable String email){
         return ResponseEntity.ok().body(userService.getUserByEmail(email));
