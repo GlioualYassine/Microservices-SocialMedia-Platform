@@ -46,6 +46,7 @@ spring:
           uri: lb:http://CHAT-SERVICE
           predicates:
             - Path=/stomp-endpoint/**
+            - Path=/user/**
           filters:
               - RemoveResponseHeader=Sec-WebSocket-Protocol
 

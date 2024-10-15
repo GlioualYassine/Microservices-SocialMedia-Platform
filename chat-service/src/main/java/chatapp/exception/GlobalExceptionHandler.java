@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
      * @param e The general exception to handle.
      * @return A ResponseEntity with an ApiResponse representing a general internal server error.
      */
-    @ExceptionHandler(Exception.class)
+    //@ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGeneralException(Exception e) {
         return new ResponseEntity<>(
                 ApiResponse.builder()

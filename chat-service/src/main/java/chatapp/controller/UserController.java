@@ -77,7 +77,7 @@ public class UserController {
      * @param user2Id The ID of the second user in the conversation.
      * @return ResponseEntity containing an ApiResponse with the conversation ID for the user pair.
      */
-    @GetMapping("/conversation/id")
+    @PostMapping("/conversation/id")
     public ResponseEntity<ApiResponse> findConversationIdByUser1IdAndUser2Id(@RequestParam UUID user1Id, @RequestParam UUID user2Id) {
         return userService.findConversationIdByUser1IdAndUser2Id(user1Id, user2Id);
     }

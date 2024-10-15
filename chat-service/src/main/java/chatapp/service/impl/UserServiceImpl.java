@@ -173,7 +173,7 @@ public class UserServiceImpl implements UserService {
             );
         }
 
-        Optional<Conversation> existingConversation = conversationRepository.findConversationByUsers(user1.get(), user2.get());
+        Optional<Conversation> existingConversation = conversationRepository.findConversationByUsersID(user1.get().getUserId(), user2.get().getUserId());
         if (existingConversation.isPresent()) {
             conversationId = existingConversation.get().getConversationId();
         } else {

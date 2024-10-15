@@ -1,5 +1,6 @@
 package org.example.userservice.kafka.consumer;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.userservice.models.User;
 import org.example.userservice.repositories.UserRepository;
@@ -25,11 +26,18 @@ public class UserConsumer {
     }
 
     @KafkaListener(topics = "user-friend-topic")
-    public void consumeUserFriendship(UserFriendDTO userFriendDTO){
+    @Transactional
+    public void consumeUserFriendship(UserFriendDTO userFriendDTO) {
         userRepository.findById(userFriendDTO.userId())
                 .ifPresent(user -> {
                     user.getFriends().add(userFriendDTO.friendId());
                     userRepository.save(user);
                 });
+        userRepository.findById(userFriendDTO.friendId())
+                .ifPresent(user -> {
+                    user.getFriends().add(userFriendDTO.userId());
+                    userRepository.save(user);
+                });
     }
+
 }
