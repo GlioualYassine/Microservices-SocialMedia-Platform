@@ -16,7 +16,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     # Type of database
     database: postgresql
     # Hibernate dialect for PostgreSQL

@@ -1,9 +1,6 @@
-package org.example.notificationservice.models;
+package org.example.friendshipservice.kafka.producer.notifications;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -12,10 +9,8 @@ import java.util.Date;
 import java.util.UUID;
 @Getter
 @Setter
-@ToString
-@Entity
+@ToString @Builder
 public class Notification {
-    @Id
     private UUID id;
     private UUID senderId;
     private String senderName;
@@ -24,6 +19,5 @@ public class Notification {
     private String message;
     private Date createdAt;
     private boolean isRead;
-    @Enumerated(EnumType.STRING)
     private NotificationType type;
 }

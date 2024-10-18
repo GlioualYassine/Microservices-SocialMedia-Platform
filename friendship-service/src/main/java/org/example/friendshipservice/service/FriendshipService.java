@@ -5,6 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.friendshipservice.dtos.UserDTO;
 import org.example.friendshipservice.kafka.producer.UserFriendDTO;
 import org.example.friendshipservice.kafka.producer.UserFriendProducer;
+import org.example.friendshipservice.kafka.producer.notifications.Notification;
+import org.example.friendshipservice.kafka.producer.notifications.NotificationDTO;
+import org.example.friendshipservice.kafka.producer.notifications.NotificationProducer;
+import org.example.friendshipservice.kafka.producer.notifications.NotificationType;
 import org.example.friendshipservice.mapper.UserMapper;
 import org.example.friendshipservice.model.Friendship;
 import org.example.friendshipservice.model.User;
@@ -13,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,6 +29,9 @@ public class FriendshipService {
 
     private final UserRepository userRepository;
     private final UserFriendProducer userFriendProducer;
+    private final NotificationProducer notificationProducer;
+
+
     // Send a friend request
     @Transactional
     public void sendFriendRequest(UUID fromUserId, UUID toUserId) {
@@ -47,6 +55,21 @@ public class FriendshipService {
         // Save the updated sender user entity to the repository.
         userRepository.save(fromUser);
 
+        NotificationDTO notification =
+                 NotificationDTO.builder()
+                                .id(UUID.randomUUID())
+                                .receiverId(toUserId)
+                                .receiverName(toUser.getUsername())
+                                .senderName(fromUser.getUsername())
+                                .senderId(fromUserId)
+                                .isRead(false)
+                                .createdAt(new Date())
+                                .type(NotificationType.FRIEND_REQUEST_RECEIVED)
+                                .message("You have a new friend request from " + fromUser.getUsername())
+                                .build();
+
+        // Send a notification to the receiving user.
+        notificationProducer.sendNotification(notification);
 
     }
 
@@ -110,7 +133,54 @@ public class FriendshipService {
             log.info("Friendship event sent: {}", userFriendEvent);
 
             log.info("Finished processing acceptFriendRequest.");
+
+            NotificationDTO notification =
+                    NotificationDTO.builder()
+                            .id(UUID.randomUUID())
+                            .receiverId(fromUserId)
+                            .receiverName(fromUser.getUsername())
+                            .senderName(toUser.getUsername())
+                            .senderId(toUser.getId())
+                            .isRead(false)
+                            .createdAt(new Date())
+                            .type(NotificationType.FRIEND_REQUEST_ACCEPTED)
+                            .message("You have a new friend request from " + fromUser.getUsername())
+                            .build();
+
+            // Send a notification to the receiving user.
+            notificationProducer.sendNotification(notification);
         }
+
+    @Transactional
+    public void rejectFriendRequest(UUID fromUserId, UUID toUserId) {
+        User fromUser = userRepository.findById(fromUserId).orElse(null);
+        if(fromUser == null){
+            return;
+        }
+        User toUser = userRepository.findById(toUserId).orElse(null);
+        if(toUser == null){
+            return;
+        }
+        fromUser.getFriendRequestsReceived().remove(toUser);
+        toUser.getFriendRequestsSent().remove(fromUser);
+        userRepository.save(fromUser);
+        userRepository.save(toUser);
+
+        NotificationDTO notification =
+                 NotificationDTO.builder()
+                                .id(UUID.randomUUID())
+                                .receiverId(fromUserId)
+                                .receiverName(fromUser.getUsername())
+                                .senderName(toUser.getUsername())
+                                .senderId(toUserId)
+                                .isRead(false)
+                                .createdAt(new Date())
+                                .type(NotificationType.FRIEND_REQUEST_REJECTED)
+                                .message("Your friend request has been rejected by " + fromUser.getUsername())
+                                .build();
+        notificationProducer.sendNotification(notification);
+
+    }
 
 
     // Get all friends of a user

@@ -64,6 +64,11 @@ spring:
           uri: lb:http://FRIENDSHIP-SERVICE
           predicates:
             - Path=/api/v1/friendships/**
+
+        - id: notification-service
+          uri: lb:http://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/v1/notifications/**
 server:
   port: 8589
 application:

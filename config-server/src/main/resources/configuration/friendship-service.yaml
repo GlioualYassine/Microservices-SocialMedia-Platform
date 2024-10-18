@@ -14,7 +14,7 @@ spring:
       properties:
         #since we want to serialize a json object, the producer needs to inform the consumer of our topic
         #what is the object that we are sending so here we are sending an object of type orderConfirmation
-        spring.json.type.mapping: userFriendDTO:org.example.friendshipservice.kafka.producer.UserFriendDTO
+        spring.json.type.mapping: userFriendDTO:org.example.friendshipservice.kafka.producer.UserFriendDTO,notification:org.example.friendshipservice.kafka.producer.notifications.NotificationDTO
     consumer:
       bootstrap-servers: localhost:9092
       group-id: nodesGroup
