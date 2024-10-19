@@ -57,4 +57,10 @@ public class PostController {
         postService.deletePost(postId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostResponse> getPostById(@PathVariable UUID postId) {
+        PostResponse post = postService.getPostById(postId);
+        return new ResponseEntity<>(post, HttpStatus.OK);
+    }
 }

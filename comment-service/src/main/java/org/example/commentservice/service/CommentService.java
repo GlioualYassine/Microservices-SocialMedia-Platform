@@ -2,11 +2,8 @@ package org.example.commentservice.service;
 
 
 import lombok.RequiredArgsConstructor;
-import org.example.commentservice.FeignClients.CommentResponse;
-import org.example.commentservice.FeignClients.User;
-import org.example.commentservice.FeignClients.UserServiceClient;
-import org.example.commentservice.kafka.producer.CommentEvent;
-import org.example.commentservice.kafka.producer.CommentProducer;
+import org.example.commentservice.FeignClients.*;
+import org.example.commentservice.kafka.producer.*;
 import org.example.commentservice.models.Comment;
 import org.example.commentservice.repository.CommentRepository;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -14,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,6 +22,8 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final CommentProducer commentProducer;
     private final UserServiceClient userServiceClient;
+    private final PostServiceClient postServiceClient;
+    private final NotificationProducer notificationProducer;
 
     // Méthode pour ajouter un commentaire (via Kafka)
     public CommentResponse addComment(String commentContent, UUID postId, UUID userId) {
@@ -52,8 +52,22 @@ public class CommentService {
                 .userId(user)
                 .createdAt(comment.getCreatedAt())
                 .build();
-
-
+        PostResponse post = postServiceClient.getPostById(postId);
+        User postOwner = post.getUser();
+        if(!postOwner.id().equals(userId)) {
+            NotificationDTO notificationDTO = NotificationDTO.builder()
+                    .id(UUID.randomUUID())
+                    .senderId(user.id())
+                    .senderName(user.username())
+                    .receiverId(postOwner.id())
+                    .receiverName(postOwner.username())
+                    .message("Commented on your post")
+                    .isRead(false)
+                    .type(NotificationType.COMMENT_NOTIFICATION)
+                    .createdAt(new Date())
+                    .build();
+            notificationProducer.sendNotification(notificationDTO);
+        }
         commentRepository.save(comment);
         return commentResponse;
     }

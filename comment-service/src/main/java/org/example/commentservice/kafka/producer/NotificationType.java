@@ -1,4 +1,4 @@
-package org.example.notificationservice.models;
+package org.example.commentservice.kafka.producer;
 
 public enum NotificationType {
     FRIEND_REQUEST_RECEIVED,

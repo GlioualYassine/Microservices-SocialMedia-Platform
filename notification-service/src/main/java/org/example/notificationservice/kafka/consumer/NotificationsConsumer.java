@@ -16,7 +16,6 @@ public class NotificationsConsumer {
     private final WebSocketService webSocketService;
 
     @KafkaListener(topics = "notification-websocket-topic")
-    @Async
     public void consumeNotification(NotificationDTO notif) {
 
         Notification notification = new Notification();

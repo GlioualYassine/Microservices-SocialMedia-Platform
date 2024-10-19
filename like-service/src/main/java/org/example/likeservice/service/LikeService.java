@@ -3,16 +3,18 @@ package org.example.likeservice.service;
 
 import lombok.RequiredArgsConstructor;
 
-import org.example.likeservice.FeignClients.LikeResponse;
-import org.example.likeservice.FeignClients.UserServiceClient;
+import org.example.likeservice.FeignClients.*;
 import org.example.likeservice.models.Like;
 import org.example.likeservice.producer.LikeEvent;
 import org.example.likeservice.producer.LikeProducer;
+import org.example.likeservice.producer.notifications.NotificationDTO;
+import org.example.likeservice.producer.notifications.NotificationProducer;
 import org.example.likeservice.repository.LikeRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,7 +25,8 @@ public class LikeService {
     private final LikeRepository likeRepository;
     private final LikeProducer likeProducer;
     private final UserServiceClient userServiceClient;
-
+    private final PostServiceClient postServiceClient;
+    private  final NotificationProducer notificationProducer;
     public Like addLike(UUID postId, UUID userId) {
         Like like = Like
                 .builder()
@@ -41,6 +44,16 @@ public class LikeService {
                 .createdAt(like.getCreatedAt())
                 .build();
         likeProducer.sendCommentEventToPostSeviceToUpdateLikesList(likeEvent);
+        PostResponse post = postServiceClient.getPostById(postId);
+        User user = post.getUser() ;
+        NotificationDTO notificationDTO = NotificationDTO.builder()
+                .id(UUID.randomUUID())
+                .senderId(userId)
+                .receiverId(user.getId())
+                .message("A user liked your post")
+                .createdAt(new Date())
+                .build();
+        notificationProducer.sendNotification(notificationDTO);
         return likeRepository.save(like);
     }
 

@@ -86,6 +86,8 @@ public class PostService {
                             .createdAt(post.getCreatedAt())
                             .updatedAt(post.getUpdatedAt())
                             .build();
+                    if (post.getImageUrl() != null)
+                        postResponse.setImage(FileUtils.readFileFromLocation(post.getImageUrl()));
                     postResponses.add(postResponse);
                 }
         );
@@ -185,5 +187,21 @@ public class PostService {
         var postPicture = fileStorageService.saveFile(file,post.getUser().getId());
         post.setImageUrl(postPicture);
         postRespository.save(post);
+    }
+
+    public PostResponse getPostById(UUID postId) {
+        Post post =  postRespository.findById(postId).orElse(null);
+        PostResponse postResponse = PostResponse.builder()
+                .id(post.getId())
+                .content(post.getContent())
+                .user(post.getUser())
+                .comments(commentServiceClient.getCommentsByPostId(post.getId()))
+                .likes(likeServiceClient.getLikesByPostId(post.getId()))
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
+                .build();
+        if (post.getImageUrl() != null)
+            postResponse.setImage(FileUtils.readFileFromLocation(post.getImageUrl()));
+        return  postResponse;
     }
 }

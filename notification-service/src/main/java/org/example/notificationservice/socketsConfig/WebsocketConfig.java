@@ -1,6 +1,8 @@
 package org.example.notificationservice.socketsConfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -28,11 +30,10 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
     private final MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter;
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Configuration du broker avec un préfixe utilisateur pour les messages privés
-        config.enableSimpleBroker("/queue", "/topic");  // Ajout de /queue et /topic
-        config.setApplicationDestinationPrefixes("/app");  // Préfixe des requêtes entrantes
-        config.setUserDestinationPrefix("/user");  // Préfixe pour envoyer des messages privés
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/user");
+        registry.setApplicationDestinationPrefixes("/app");
+        registry.setUserDestinationPrefix("/user");
     }
 
     @Override
@@ -47,11 +48,17 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
         DefaultContentTypeResolver resolver = new DefaultContentTypeResolver();
         resolver.setDefaultMimeType(APPLICATION_JSON);
 
+        // Create ObjectMapper and register the JSR310 module
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // Optional: write dates in ISO format
+
+        // Create and configure the message converter
         MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
-        converter.setObjectMapper(new ObjectMapper());  // Utiliser Jackson pour sérialiser les objets
+        converter.setObjectMapper(objectMapper);
         converter.setContentTypeResolver(resolver);
 
         messageConverters.add(converter);
-        return false;  // Garde la configuration par défaut avec l'ajout du converter JSON
+        return false;
     }
 }

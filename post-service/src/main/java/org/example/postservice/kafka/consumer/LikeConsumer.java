@@ -1,5 +1,6 @@
 package org.example.postservice.kafka.consumer;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.postservice.models.Post;
@@ -15,6 +16,7 @@ public class LikeConsumer {
     private final PostRespository postRespository;
 
     @KafkaListener(topics = "likes-events")
+    @Transactional
     public void consumeLikeEvent(LikeEvent likeEvent){
         System.out.println("Consumed like event: " + likeEvent);
         Post post = postRespository.findById(likeEvent.postId()).orElse(null);

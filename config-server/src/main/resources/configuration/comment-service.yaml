@@ -23,7 +23,7 @@ spring:
       properties:
         #since we want to serialize a json object, the producer needs to inform the consumer of our topic
         #what is the object that we are sending so here we are sending an object of type orderConfirmation
-        spring.json.type.mapping: commentEvent:org.example.commentservice.kafka.producer.CommentEvent
+        spring.json.type.mapping: commentEvent:org.example.commentservice.kafka.producer.CommentEvent, notification:org.example.commentservice.kafka.producer.NotificationDTO
 server:
   servlet:
     context-path: /api/v1
