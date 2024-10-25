@@ -11,5 +11,6 @@ import java.util.UUID;
 public class UserFriendsResponseList {
     private UUID id ;
     private String username;
+    private String imageUrl;
     List <FriendModel> friends= new ArrayList<>();
 }

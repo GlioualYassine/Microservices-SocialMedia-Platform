@@ -116,6 +116,7 @@ public void notifyAllUsersNewUserOffline(UUID userId, String userName) {
      */
     @Override
     public void saveMessage(MessageRequest msg) {
+        System.out.println(msg);
         User sender = userRepository.findById(msg.getSenderId()).get();
         User receiver = userRepository.findById(msg.getReceiverId()).get();
         Conversation conversation = conversationRepository.findConversationByUsers(sender, receiver).get();

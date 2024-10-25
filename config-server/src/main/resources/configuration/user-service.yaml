@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 15MB
   datasource:
     # URL of the PostgreSQL database
     url: jdbc:postgresql://localhost:5432/userservicedb
@@ -41,3 +45,7 @@ server:
   servlet:
     context-path: /api/v1
   port: 8082
+application:
+  file:
+    uploads:
+      photos-output-path: ./uploads

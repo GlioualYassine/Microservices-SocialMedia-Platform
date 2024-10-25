@@ -1,11 +1,14 @@
 package org.example.userservice.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.example.userservice.dto.UserResponse;
+import org.example.userservice.dto.UserUpdateDTO;
 import org.example.userservice.models.User;
 import org.example.userservice.services.UserFriendsResponseList;
 import org.example.userservice.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,12 +20,12 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/all/{id}")
-    public ResponseEntity<List<User>>getAllUsersExceptUser(@PathVariable UUID id){
+    public ResponseEntity<List<UserResponse>>getAllUsersExceptUser(@PathVariable UUID id){
         return ResponseEntity.ok().body(userService.getAllUsersExceptUserAndFriend(id));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User>getUserById(@PathVariable UUID id){
+    public ResponseEntity<UserResponse>getUserById(@PathVariable UUID id){
         return ResponseEntity.ok().body(userService.getUserById(id));
     }
 
@@ -47,10 +50,11 @@ public class UserController {
         return ResponseEntity.ok().body(userService.createUser(user));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<User>updateUser(@PathVariable UUID id, @RequestBody User user){
-        user.setId(id);
-        return ResponseEntity.ok().body(userService.updateUser(user));
+    @PutMapping(value = "/{id}" ,  consumes = "multipart/form-data")
+    public ResponseEntity<User>updateUser(@PathVariable UUID id,
+                                          @ModelAttribute UserUpdateDTO userUpdateDTO, @RequestParam("file") MultipartFile file ){
+        userUpdateDTO.setId(id);
+        return ResponseEntity.ok().body(userService.updateUser(userUpdateDTO , file));
     }
 
     @DeleteMapping("/{id}")

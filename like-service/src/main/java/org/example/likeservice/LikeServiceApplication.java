@@ -9,6 +9,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 public class LikeServiceApplication {
 
 	public static void main(String[] args) {
+
 		SpringApplication.run(LikeServiceApplication.class, args);
 	}
 

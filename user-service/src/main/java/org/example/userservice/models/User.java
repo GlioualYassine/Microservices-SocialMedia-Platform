@@ -25,8 +25,10 @@ public class User {
     private String lastName;
     private String username;
     private String email;
-    private String bio;
-    public Date birthDate;
+    private String bio="";
+    private Date birthDate;
+    private String imageUrl="";
+
     @CreatedDate
     @Column(updatable = false , nullable = false)
     LocalDateTime createdAt;
@@ -50,4 +52,16 @@ public class User {
     @Column(name = "friends_request_received_ids")
     private List<UUID> friendsRequestReceived = new ArrayList<>();
 
+    @Override
+    public String toString() {
+        return "User{" +
+                "lastName='" + lastName + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", bio='" + bio + '\'' +
+                ", birthDate=" + birthDate +
+                ", imageUrl='" + imageUrl + '\'' +
+                '}';
+    }
 }

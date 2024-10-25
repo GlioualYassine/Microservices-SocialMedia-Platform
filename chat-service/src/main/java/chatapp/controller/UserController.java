@@ -27,33 +27,7 @@ import java.util.UUID;
 public class UserController {
     final UserService userService;
 
-    /**
-     * Register a new user in the system.
-     *
-     * @param user The User object representing the user to be registered.
-     * @return ResponseEntity containing an ApiResponse indicating the result of the registration.
-     */
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse> register(@RequestBody User user) {
-        return userService.saveUser(user);
-    }
 
-    /**
-     * Login a user based on their email address.
-     *
-     * @param loginRequest The LoginRequest object containing the user's email for login.
-     * @return ResponseEntity containing an ApiResponse with user information if the login is successful.
-     */
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@RequestBody LoginRequest loginRequest) {
-        return userService.findUserByEmail(loginRequest.getEmail());
-    }
-
-    /**
-     * Retrieve a list of all users in the system.
-     *
-     * @return ResponseEntity containing an ApiResponse with a list of User objects representing all users.
-     */
     @GetMapping("/all")
     public ResponseEntity<ApiResponse> findAllUsers() {
         return userService.findAllUsers();
